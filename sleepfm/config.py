@@ -15,8 +15,8 @@ CONFIG = types.SimpleNamespace(
 )
 
 #define the paths
-PATH_TO_RAW_DATA = r"C:\Users\JD\sleepfm_cap_rbd\data\raw"
-PATH_TO_PROCESSED_DATA = r"C:\Users\JD\sleepfm_cap_rbd\data\processed"
+PATH_TO_RAW_DATA = r"C:\Users\JD\sleepfm-codebase-cap\data_rbd_only\raw"
+PATH_TO_PROCESSED_DATA = r"C:\Users\JD\sleepfm-codebase-cap\data_rbd_only\processed"
 
 # Define Sleep related global variables
 
@@ -61,24 +61,19 @@ LABEL_MAP = {
 
 
 # Define the channels in your dataset
-ALL_CHANNELS = ['C4-A1', #eeg
- 'F4-C4', #eeg
- 'P4-O2', #eeg
- 'ROC-LOC', #eeg
- 'SX1-SX2', # treat as respiratory proxy
- 'ECG1-ECG2' #ecg
- ]
+ALL_CHANNELS = [
+    'F4-C4', 'C4-P4', 'P4-O2', 'ROC-LOC', 'EMG1-EM2', 'ECG1-ECG2', 'C4-A1', 'SX1-SX2'
+]
 
 
 CHANNEL_DATA = {
-    "Respiratory": ["SX1-SX2"],
-    "Sleep_Stages": ["C4-A1", "F4-C4", "P4-O2", "ROC-LOC"],
-    "EKG": ["ECG1-ECG2"], 
-    }
-
+    "Respiratory": [],  # none for this test run
+    "Sleep_Stages": ['F4-C4','C4-P4','P4-O2','ROC-LOC','EMG1-EM2'],
+    "EKG": ['ECG1-ECG2'],
+}
 
 CHANNEL_DATA_IDS = {
-    "Respiratory": [ALL_CHANNELS.index(item) for item in CHANNEL_DATA["Respiratory"]], 
-    "Sleep_Stages": [ALL_CHANNELS.index(item) for item in CHANNEL_DATA["Sleep_Stages"]], 
-    "EKG": [ALL_CHANNELS.index(item) for item in CHANNEL_DATA["EKG"]], 
- }
+    "Respiratory": [ALL_CHANNELS.index(c) for c in CHANNEL_DATA["Respiratory"]],
+    "Sleep_Stages": [ALL_CHANNELS.index(c) for c in CHANNEL_DATA["Sleep_Stages"]],
+    "EKG": [ALL_CHANNELS.index(c) for c in CHANNEL_DATA["EKG"]],
+}
