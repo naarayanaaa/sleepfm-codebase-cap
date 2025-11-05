@@ -15,8 +15,8 @@ CONFIG = types.SimpleNamespace(
 )
 
 #define the paths
-PATH_TO_RAW_DATA = "C:\Users\JD\sleepfm_cap_rbd\data\raw"
-PATH_TO_PROCESSED_DATA = "C:\Users\JD\sleepfm_cap_rbd\data\processed"
+PATH_TO_RAW_DATA = r"C:\Users\JD\sleepfm_cap_rbd\data\raw"
+PATH_TO_PROCESSED_DATA = r"C:\Users\JD\sleepfm_cap_rbd\data\processed"
 
 # Define Sleep related global variables
 
@@ -61,25 +61,19 @@ LABEL_MAP = {
 
 
 # Define the channels in your dataset
-ALL_CHANNELS = ['F3-M2',
- 'F4-M1',
- 'C3-M2',
- 'C4-M1',
- 'O1-M2',
- 'O2-M1',
- 'E1-M2',
- 'Chin1-Chin2',
- 'ABD',
- 'CHEST',
- 'AIRFLOW',
- 'SaO2',
- 'ECG']
+ALL_CHANNELS = ['C4-A1', #eeg
+ 'F4-C4', #eeg
+ 'P4-O2', #eeg
+ 'ROC-LOC', #eeg
+ 'SX1-SX2', # treat as respiratory proxy
+ 'ECG1-ECG2' #ecg
+ ]
 
 
 CHANNEL_DATA = {
-    "Respiratory": ["CHEST", "SaO2", "ABD"],
-    "Sleep_Stages": ["C3-M2", "C4-M1", "O1-M2", "O2-M1", "E1-M2"],
-    "EKG": ["ECG"], 
+    "Respiratory": ["SX1-SX2"],
+    "Sleep_Stages": ["C4-A1", "F4-C4", "P4-O2", "ROC-LOC"],
+    "EKG": ["ECG1-ECG2"], 
     }
 
 
