@@ -12,7 +12,7 @@ from loguru import logger
 import numpy as np
 
 import sys
-sys.path.append("../model")
+sys.path.append(os.path.join(os.path.dirname(__file__), "model"))
 import models
 from config import (CONFIG, CHANNEL_DATA, 
                     ALL_CHANNELS, CHANNEL_DATA_IDS, 
@@ -71,8 +71,8 @@ def train(
     logger.info(f"Batch Size: {batch_size}; Number of Workers: {num_workers}")
     logger.info(f"Weight Decay: {weight_decay}; Learning Rate: {lr}; Learning Step Period: {lr_step_period}")
 
-    device = torch.device("cuda")
-    logger.info(f"Device set to Cuda")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    logger.info(f"Device set to {device.type.upper()}")
 
     num_targets = len(modality_types)
     ij = sum([((i, j), (j, i)) for i in range(len(modality_types)) for j in range(i + 1, len(modality_types))], ())
@@ -158,8 +158,10 @@ def train(
         logger.info(f"Resuming from epoch {epoch_resume}\n")
     else:
         logger.info("Starting from scratch")
-    os.makedirs(os.path.join(output, "log"), exist_ok=True)
-    with open(os.path.join(output, "log", "{}.tsv".format(datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))), "w") as f:
+    log_dir = os.path.join(output, "log")
+    os.makedirs(log_dir, exist_ok=True)
+    ts = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    with open(os.path.join(log_dir, f"{ts}.tsv"), "w") as f:
         f.write("Epoch\tSplit\tTotal Loss\t")
         if mode == "pairwise":
             f.write("".join(f"{modality_types[i]}-{modality_types[j]} Loss\t" for (i, j) in ij))
