@@ -13,7 +13,7 @@ import pickle
 import math
 
 import sys
-sys.path.append("../model")
+sys.path.append(os.path.join(os.path.dirname(__file__), "model"))
 import models
 from config import (CONFIG, CHANNEL_DATA, 
                     ALL_CHANNELS, CHANNEL_DATA_IDS, 
@@ -41,23 +41,26 @@ def generate_eval_embed(
 
     output_dir = os.path.join(dataset_dir, f"{output_file}")
 
-    device = torch.device("cuda")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device.type.upper()}")
+    
     splits = splits.split(",")
+    
 
     path_to_data = dataset_dir
-
+    modality_types = ["sleep_stages", "ekg"]
     dataset = {
-        split: Dataset(os.path.join(path_to_data, dataset_file), split=split, modality_type=["respiratory", "sleep_stages", "ekg"])
+        split: Dataset(os.path.join(path_to_data, dataset_file), split=split, modality_type=modality_types)
         for split in splits
     }
-
+    """ # currently respiratory not used
     in_channel = len(CHANNEL_DATA_IDS["Respiratory"])
     model_resp = models.EffNet(in_channel=in_channel, stride=2, dilation=1)
     model_resp.fc = torch.nn.Linear(model_resp.fc.in_features, 512)
     if device.type == "cuda":
         model_resp = torch.nn.DataParallel(model_resp)
     model_resp.to(device)
-
+    """
     in_channel = len(CHANNEL_DATA_IDS["Sleep_Stages"])
     model_sleep = models.EffNet(in_channel=in_channel, stride=2, dilation=1)
     model_sleep.fc = torch.nn.Linear(model_sleep.fc.in_features, 512)
@@ -72,12 +75,13 @@ def generate_eval_embed(
         model_ekg = torch.nn.DataParallel(model_ekg)
     model_ekg.to(device)
 
+    
     checkpoint = torch.load(os.path.join(output_dir, "best.pt"))
     temperature = checkpoint["temperature"]
-
+    """ # not used right now
     model_resp.load_state_dict(checkpoint["respiratory_state_dict"])
     model_resp.eval()
-
+    """
     model_sleep.load_state_dict(checkpoint["sleep_stages_state_dict"])
     model_sleep.eval()
 
@@ -91,17 +95,17 @@ def generate_eval_embed(
         dataloader = torch.utils.data.DataLoader(dataset[split], batch_size=batch_size, num_workers=num_workers, shuffle=False, drop_last=False)
         save_interval = math.ceil(len(dataloader) / 8)
         counter = 0
-        emb = [[], [], []]
+        emb = [[], []] # previous was " emb = [[], [], []]" but since only [sleep_stages, ekg] is used now - need only 2
         with torch.no_grad():
             with tqdm.tqdm(total=len(dataloader), desc=("Embeddings for " + split)) as pbar:
-                for (i, (resp, sleep, ekg)) in enumerate(dataloader):
-                    resp = resp.to(device, dtype=torch.float)
+                for (sleep, ekg) in dataloader: #resp and i iterative taken out, old line: for (i, (resp, sleep, ekg)) in enumerate(dataloader):;
+                    #resp = resp.to(device, dtype=torch.float)
                     sleep = sleep.to(device, dtype=torch.float)
                     ekg = ekg.to(device, dtype=torch.float)
 
-                    emb[0].append(torch.nn.functional.normalize(model_resp(resp)).detach().cpu())
-                    emb[1].append(torch.nn.functional.normalize(model_sleep(sleep)).detach().cpu())
-                    emb[2].append(torch.nn.functional.normalize(model_ekg(ekg)).detach().cpu())
+                    # emb[0].append(torch.nn.functional.normalize(model_resp(resp)).detach().cpu())
+                    emb[0].append(torch.nn.functional.normalize(model_sleep(sleep)).detach().cpu())
+                    emb[1].append(torch.nn.functional.normalize(model_ekg(ekg)).detach().cpu())
 
                     pbar.update()
         
