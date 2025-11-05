@@ -38,7 +38,7 @@ def main(args):
 
     output_file = args.output_file
     path_to_output = os.path.join(dataset_dir, f"{output_file}")
-    breakpoint()
+    #breakpoint() : commented because keeps crashing into python's debugger (pdb) instead of cleanly running.
     modality_type = args.modality_type
     num_per_event = args.num_per_event
     model_name = args.model_name
@@ -112,16 +112,20 @@ def main(args):
     for i in range(len(labels_test)):
         if labels_test[i] in LABELS_DICT:
             indices_test.append(i)
+    # for this cap-rbd testrun, our embedding pickles are in this order:
+    # [0] sleep_stages, [1] ekg
+    EMB_INDEX = {"sleep_stages": 0, "ekg": 1}
 
     if modality_type == "combined":
+        # concatenate [sleep, ekg] along feature dim
         emb_test = np.concatenate(emb_test, axis=1)
         emb_valid = np.concatenate(emb_valid, axis=1)
         emb_train = np.concatenate(emb_train, axis=1)
     else:
-        target_index = MODALITY_TYPES.index(modality_type)
-        emb_test = emb_test[target_index]
-        emb_valid = emb_valid[target_index]
-        emb_train = emb_train[target_index]
+        idx = EMB_INDEX[modality_type] #previously was: target_index = MODALITY_TYPES.index(modality_type)
+        emb_test = emb_test[idx]
+        emb_valid = emb_valid[idx]
+        emb_train = emb_train[idx]
 
     X_train = emb_train[indices_train]
     y_train = np.array(labels_train)[indices_train]
