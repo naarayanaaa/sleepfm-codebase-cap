@@ -1,0 +1,102 @@
+import os, glob, pickle, argparse, numpy as np, mne, math
+from loguru import logger
+from config import ALL_CHANNELS, PATH_TO_RAW_DATA, PATH_TO_PROCESSED_DATA
+from scipy.signal import resample as scipy_resample
+
+# Memory-safe: no raw preload, epoch-by-epoch saving, optional decimation
+
+def get_args():
+    p = argparse.ArgumentParser()
+    p.add_argument("--data_path", type=str, default=None)
+    p.add_argument("--save_path", type=str, default=None)
+    p.add_argument("--chunk_duration", type=float, default=30.0)
+    p.add_argument("--target_sampling_rate", type=int, default=256)
+    p.add_argument("--pattern", type=str, default="RBD*.edf", help="Glob pattern for files (e.g., RBD12.edf or RBD*.edf)")
+    p.add_argument("--max_files", type=int, default=-1, help="Limit number of EDFs (for quick tests)")
+    return p.parse_args()
+
+def _safe_pick(raw):
+    # New API (avoid legacy warnings)
+    # Ensure exact order as in ALL_CHANNELS
+    missing = [ch for ch in ALL_CHANNELS if ch not in raw.ch_names]
+    if missing:
+        raise RuntimeError(f"Missing required channels: {missing}")
+    raw.pick(ALL_CHANNELS, ordered=True)
+
+def _epoch_iterator(raw, chunk_duration, target_fs):
+    """Yield (epoch_index, data[np.float32, shape = (n_chan, n_samples)], label_str)"""
+    orig_fs = raw.info["sfreq"]
+    # Use event+Epochs with preload=False to avoid loading the entire file
+    events = mne.make_fixed_length_events(raw, duration=chunk_duration)
+    # decimate if target_fs divides orig_fs nicely to avoid big FFT resample
+    decim = None
+    if abs(orig_fs / target_fs - round(orig_fs / target_fs)) < 1e-6:
+        decim = int(round(orig_fs / target_fs))
+    epochs = mne.Epochs(raw, events, tmin=0.0, tmax=chunk_duration - 1.0/orig_fs,
+                        baseline=None, preload=False, verbose="ERROR", decim=decim)
+    # If no exact decim, we’ll resample per-epoch chunk with scipy_resample
+    for i in range(len(epochs)):
+        x = epochs[i].get_data()[0]  # shape (n_chan, n_samples_chunk)
+        if decim is None and target_fs != orig_fs:
+            new_len = int(round(x.shape[1] * (target_fs / orig_fs)))
+            x = scipy_resample(x, num=new_len, axis=1)
+        yield i, x.astype(np.float32), "W"  # dummy label
+
+def main():
+    args = get_args()
+    raw_dir = args.data_path or PATH_TO_RAW_DATA
+    out_dir = args.save_path or PATH_TO_PROCESSED_DATA
+    os.makedirs(out_dir, exist_ok=True)
+    x_dir = os.path.join(out_dir, "X")
+    y_dir = os.path.join(out_dir, "Y")
+    os.makedirs(x_dir, exist_ok=True)
+    os.makedirs(y_dir, exist_ok=True)
+
+    files = sorted(glob.glob(os.path.join(raw_dir, args.pattern)))
+    if args.max_files != -1:
+        files = files[:args.max_files]
+    logger.info(f"Found {len(files)} EDF files matching '{args.pattern}'")
+
+    for edf in files:
+        base = os.path.splitext(os.path.basename(edf))[0]
+        logger.info(f"Processing {base}")
+        try:
+            # DO NOT preload: keeps RAM low
+            raw = mne.io.read_raw_edf(edf, preload=False, verbose="ERROR")
+            _safe_pick(raw)
+        except Exception as e:
+            logger.error(f"Skipping {base}. Reason: {e}")
+            continue
+
+        # Create output slots
+        X_patient_dir = os.path.join(x_dir, base)
+        os.makedirs(X_patient_dir, exist_ok=True)
+        labels = {}
+
+        try:
+            for i, ep, lab in _epoch_iterator(raw, args.chunk_duration, args.target_sampling_rate):
+                fname = f"{base}_{i}.npy"
+                np.save(os.path.join(X_patient_dir, fname), ep)
+                labels[fname] = lab
+        except Exception as e:
+            logger.error(f"Failed while epoching {base}. Reason: {e}")
+            # If partial epochs were written, keep them; otherwise, remove empty folder
+            if len(os.listdir(X_patient_dir)) == 0:
+                try: os.rmdir(X_patient_dir)
+                except: pass
+            continue
+
+        # Write labels only if we wrote something
+        if len(labels) > 0:
+            with open(os.path.join(y_dir, f"{base}.pickle"), "wb") as f:
+                pickle.dump(labels, f)
+            logger.info(f"Saved {len(labels)} epochs for {base}")
+        else:
+            logger.warning(f"No epochs saved for {base}; removing empty folder.")
+            try: os.rmdir(X_patient_dir)
+            except: pass
+
+    logger.info("✅ Extraction complete (memory-safe).")
+
+if __name__ == "__main__":
+    main()
