@@ -26,7 +26,7 @@ def get_args():
     p.add_argument(
         "--pattern",
         type=str,
-        default="RBD*.edf",
+        default="*.edf",
         help="Glob pattern for EDFs (e.g., RBD12.edf or RBD*.edf)",
     )
     p.add_argument(
