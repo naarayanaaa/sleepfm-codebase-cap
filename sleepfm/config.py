@@ -15,8 +15,8 @@ CONFIG = types.SimpleNamespace(
 )
 
 #define the paths
-PATH_TO_RAW_DATA = r"C:\Users\JD\sleepfm-codebase-cap\data_rbd_only\raw"
-PATH_TO_PROCESSED_DATA = r"C:\Users\JD\sleepfm-codebase-cap\data_rbd_only\processed"
+PATH_TO_RAW_DATA = r"C:\Users\JD\sleepfm-codebase-cap\data_all\raw"
+PATH_TO_PROCESSED_DATA = r"C:\Users\JD\sleepfm-codebase-cap\data_all\processed"
 
 # Define Sleep related global variables
 
@@ -62,14 +62,14 @@ LABEL_MAP = {
 
 # Define the channels in your dataset
 ALL_CHANNELS = [
-    'F4-C4', 'C4-P4', 'P4-O2', 'ROC-LOC', 'EMG1-EM2', 'ECG1-ECG2', 'C4-A1', 'SX1-SX2'
+    'F4-C4', 'C4-P4', 'P4-O2', 'C4-A1'
 ]
 
 
 CHANNEL_DATA = {
     "Respiratory": [],  # none for this test run
-    "Sleep_Stages": ['F4-C4','C4-P4','P4-O2','ROC-LOC','EMG1-EM2'],
-    "EKG": ['ECG1-ECG2'],
+    "Sleep_Stages": ['F4-C4', 'C4-P4'],
+    "EKG": ['P4-O2', 'C4-A1'],
 }
 
 CHANNEL_DATA_IDS = {
