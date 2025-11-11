@@ -18,5 +18,6 @@ for mode in "${modes[@]}"; do
         --mode $mode \
         --batch_size 32 \
         --lr $lr \
-        --lr_step_period $lr_step_period
+        --lr_step_period $lr_step_period \
+		--modality_types sleep_stages,ekg
 done
