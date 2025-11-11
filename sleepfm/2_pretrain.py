@@ -39,7 +39,7 @@ class StringListParamType(click.ParamType):
 @click.option("--lr_step_period", type=int, default=2)
 @click.option("--epochs", type=int, default=100)
 @click.option("--mode", type=click.Choice(["pairwise", "leave_one_out"]), default="pairwise")
-@click.option("--modality_types", type=StringListParamType(), default="respiratory,sleep_stages,ekg")
+@click.option("--modality_types", type=StringListParamType(), default="sleep_stages,ekg") #respiratory taken out
 def train(
     dataset_dir,
     dataset_file,
