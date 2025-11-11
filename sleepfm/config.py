@@ -57,6 +57,12 @@ LABEL_MAP = {
     "nonrem2": "Stage 2", 
     "nonrem3": "Stage 3", 
     "rem": "REM", 
+        # NEW: allow already-canonical labels from CAP TXT
+    "Wake": "Wake",
+    "Stage 1": "Stage 1",
+    "Stage 2": "Stage 2",
+    "Stage 3": "Stage 3",
+    # (add "Stage 4" if you ever use it; you can map to "Stage 3" if you want N3/N4 merged)
 }
 
 
