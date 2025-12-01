@@ -20,7 +20,7 @@ from sklearn.metrics import roc_curve, auc, roc_auc_score
 from sklearn.metrics import precision_recall_curve, average_precision_score
 
 import sys
-sys.path.append("../model")
+sys.path.append("/content/sleepfm/model")
 import models
 import config
 from config import (MODALITY_TYPES, CLASS_LABELS, 
